@@ -6,19 +6,43 @@ nums = [0.2074571142070556, 0.7094906253548635, 0.2090917477572467, 0.8971264835
 
 MASK = 0xffffffffffffffff
 
+"""
+// https://github.com/v8/v8/blob/dd5370d3d251320f6a5bed609ff8e1b71c767d97/src/base/utils/random-number-generator.cc#L228
+
+uint64_t RandomNumberGenerator::MurmurHash3(uint64_t h) {
+    h ^= h >> 33;
+    h *= uint64_t{0xFF51AFD7ED558CCD};
+    h ^= h >> 33;
+    h *= uint64_t{0xC4CEB9FE1A85EC53};
+    h ^= h >> 33;
+    return h;
+}
+
+"""
+
 def murmurhash3(h):
     h ^= h >> 33
-    h = (h * 0xFF51AFD7ED558CCD) & MASK
+    h = (h * 0xFF51AFD7ED558CCD) & MASK  
     h ^= h >> 33
     h = (h * 0xC4CEB9FE1A85EC53) & MASK
     h ^= h >> 33
     return h
 
+"""
+MASK 0xffffffffffffffff (2^64 - 1) is treated as mod 2^64, cause:
+
+a & (b-1) = a % b (b is a power of 2)
+
+So calculate the modular inverse of 0xFF51AFD7ED558CCD and 0xC4CEB9FE1A85EC53 modulo 2^64
+"""
+INV_C1 = pow(0xFF51AFD7ED558CCD, -1, 1<<64)
+INV_C2 = pow(0xC4CEB9FE1A85EC53, -1, 1<<64)
+
 def murmurhash3_inverse(h):
     h ^= h >> 33
-    h = (h * 0x9CB4B2F8129337DB) & MASK
+    h = (h * INV_C2) & MASK
     h ^= h >> 33
-    h = (h * 0x4F74430C22A54005) & MASK
+    h = (h * INV_C1) & MASK
     h ^= h >> 33
     return h
 
@@ -45,9 +69,8 @@ def reverse_xorshift(s0,s1):
     return prev_s0
 
 s0, s1 = solve_state(nums[::-1])
-
-
 steps = 0
+
 while murmurhash3_inverse(s0) != murmurhash3_inverse(s1)^MASK:
     steps += 1
     s0, s1 = reverse_xorshift(s0, s1), s0
@@ -55,11 +78,10 @@ while murmurhash3_inverse(s0) != murmurhash3_inverse(s1)^MASK:
 seed = murmurhash3_inverse(s0)
 assert seed == murmurhash3_inverse(s1)^MASK
 print(f"recovered seed {seed} after {steps} steps")
-
 print("Wanna predict the next (nexts) number? 1 for yes, 0 for no")
 predict = input()
-ns0, ns1 = murmurhash3(seed), murmurhash3(seed^MASK)
 
+ns0, ns1 = murmurhash3(seed), murmurhash3(seed^MASK)
 
 if predict == "1":
     all_predicted = []
