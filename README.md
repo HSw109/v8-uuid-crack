@@ -1,4 +1,5 @@
-Crack the browser-based UUIDv4 generation
+
+## Crack the browser-based UUIDv4 generation
     
 ```js
 const random_uuid = uuidv4();
@@ -11,3 +12,4 @@ const random_uuid = uuidv4();
         });
     }
 ```
+## Credit: Astrid (Kalmaruniomen) https://github.com/kalmarunionenctf/kalmarctf/tree/main/2025/web/spukhafte/solution
